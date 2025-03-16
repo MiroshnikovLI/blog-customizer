@@ -5,6 +5,7 @@ import {
 	Dispatch,
 	SetStateAction,
 	SyntheticEvent,
+	useEffect,
 	useRef,
 	useState,
 } from 'react';
@@ -59,18 +60,25 @@ export const ArticleParamsForm = ({ settingForm }: settingProps) => {
 
 	function togglePanel() {
 		isOpen
-			? (setIsOpen(false),
-			  setClassForm(`${styles.container}`),
-			  document.addEventListener('keydown', handleCloseOnEscape))
+			? (setIsOpen(false), setClassForm(`${styles.container}`))
 			: (setIsOpen(true),
-			  setClassForm(`${styles.container} ${styles.container_open}`),
-			  document.removeEventListener('keydown', handleCloseOnEscape));
+			  setClassForm(`${styles.container} ${styles.container_open}`));
 	}
 
 	function handleFormAction(e: SyntheticEvent) {
 		e.preventDefault();
 		e.type === 'submit' ? settingForm.submit() : settingForm.clear();
 	}
+
+	useEffect(() => {
+		const body = document.querySelector('body') as HTMLBodyElement;
+		if (isOpen) {
+			body.addEventListener('keydown', handleCloseOnEscape);
+		}
+		return () => {
+			body.removeEventListener('keydown', handleCloseOnEscape);
+		};
+	});
 
 	return (
 		<>
