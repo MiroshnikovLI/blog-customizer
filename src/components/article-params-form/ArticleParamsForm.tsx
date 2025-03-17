@@ -133,7 +133,7 @@ export const ArticleParamsForm = ({
 						onChange={setFontColor}
 						title={'Цвет шрифта'}
 					/>
-					<Separator /> {/* Линия разделитель */}
+					<Separator />
 					<Select
 						selected={bgColor}
 						options={backgroundColors}
