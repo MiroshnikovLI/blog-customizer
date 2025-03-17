@@ -1,20 +1,15 @@
 import styles from './ArticleParamsForm.module.scss';
 import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
-import {
-	Dispatch,
-	SetStateAction,
-	SyntheticEvent,
-	useEffect,
-	useRef,
-	useState,
-} from 'react';
+import { SyntheticEvent, useEffect, useRef, useState } from 'react';
 import { Select } from 'src/ui/select';
 import { Separator } from 'src/ui/separator';
 import { RadioGroup } from 'src/ui/radio-group';
 import {
+	ArticleStateType,
 	backgroundColors,
 	contentWidthArr,
+	defaultArticleState,
 	fontColors,
 	fontFamilyOptions,
 	fontSizeOptions,
@@ -22,34 +17,48 @@ import {
 } from 'src/constants/articleProps';
 import { Text } from 'src/ui/text';
 import { useOutsideClickClose } from 'src/ui/select/hooks/useOutsideClickClose';
+import clsx from 'clsx';
 
-export type settingProps = {
-	settingForm: ISettingForm;
+type setArticleStateProps = {
+	setArticleState: (arg: ArticleStateType) => void;
 };
 
-export type ISettingForm = {
-	fontFamily: OptionType;
-	setFontFamily: Dispatch<SetStateAction<OptionType>>;
-	fontSize: OptionType;
-	setFontSize: Dispatch<SetStateAction<OptionType>>;
-	fontColor: OptionType;
-	setFontColor: Dispatch<SetStateAction<OptionType>>;
-	bgColor: OptionType;
-	setBgColor: Dispatch<SetStateAction<OptionType>>;
-	containerWidth: OptionType;
-	setContainerWidth: Dispatch<SetStateAction<OptionType>>;
-	submit: () => void;
-	clear: () => void;
-};
-
-export const ArticleParamsForm = ({ settingForm }: settingProps) => {
-	const [isOpen, setIsOpen] = useState<boolean>(false);
-	const [classForm, setClassForm] = useState<string>(styles.container);
+export const ArticleParamsForm = ({
+	setArticleState,
+}: setArticleStateProps) => {
+	const [isOpen, setIsOpen] = useState(false);
 	const rootRef = useRef<HTMLDivElement>(null);
+	const [fontFamily, setFontFamily] = useState<OptionType>(
+		defaultArticleState.fontFamilyOption
+	);
+	const [fontSize, setFontSize] = useState<OptionType>(
+		defaultArticleState.fontSizeOption
+	);
+	const [fontColor, setFontColor] = useState<OptionType>(
+		defaultArticleState.fontColor
+	);
+	const [bgColor, setBgColor] = useState<OptionType>(
+		defaultArticleState.backgroundColor
+	);
+	const [containerWidth, setContainerWidth] = useState<OptionType>(
+		defaultArticleState.contentWidth
+	);
 
-	function handleCloseOnEscape(evt: KeyboardEvent) {
-		evt.code === 'Escape' && togglePanel();
-	}
+	useEffect(() => {
+		if (!isOpen) return;
+
+		if (isOpen) {
+			document.addEventListener('keydown', handleCloseOnEscape);
+		}
+
+		function handleCloseOnEscape(evt: KeyboardEvent) {
+			evt.key === 'Escape' && togglePanel();
+		}
+
+		return () => {
+			document.removeEventListener('keydown', handleCloseOnEscape);
+		};
+	});
 
 	useOutsideClickClose({
 		isOpen,
@@ -58,88 +67,86 @@ export const ArticleParamsForm = ({ settingForm }: settingProps) => {
 		onChange: setIsOpen,
 	});
 
+	function submit() {
+		setArticleState({
+			fontFamilyOption: fontFamily,
+			fontColor: fontColor,
+			backgroundColor: bgColor,
+			contentWidth: containerWidth,
+			fontSizeOption: fontSize,
+		});
+	}
+
+	function clear() {
+		setArticleState({
+			fontFamilyOption: defaultArticleState.fontFamilyOption,
+			fontColor: defaultArticleState.fontColor,
+			backgroundColor: defaultArticleState.backgroundColor,
+			contentWidth: defaultArticleState.contentWidth,
+			fontSizeOption: defaultArticleState.fontSizeOption,
+		});
+		setFontFamily(defaultArticleState.fontFamilyOption);
+		setFontSize(defaultArticleState.fontSizeOption);
+		setFontColor(defaultArticleState.fontColor);
+		setBgColor(defaultArticleState.backgroundColor);
+		setContainerWidth(defaultArticleState.contentWidth);
+	}
+
 	function togglePanel() {
-		isOpen
-			? (setIsOpen(false), setClassForm(`${styles.container}`))
-			: (setIsOpen(true),
-			  setClassForm(`${styles.container} ${styles.container_open}`));
+		setIsOpen((prevState) => !prevState);
 	}
 
 	function handleFormAction(e: SyntheticEvent) {
 		e.preventDefault();
-		e.type === 'submit' ? settingForm.submit() : settingForm.clear();
+		e.type === 'submit' ? submit() : clear();
 	}
-
-	useEffect(() => {
-		const body = document.querySelector('body') as HTMLBodyElement;
-		if (isOpen) {
-			body.addEventListener('keydown', handleCloseOnEscape);
-		}
-		return () => {
-			body.removeEventListener('keydown', handleCloseOnEscape);
-		};
-	});
 
 	return (
 		<>
 			<ArrowButton isOpen={isOpen} onClick={togglePanel} />
-			<aside className={classForm} ref={rootRef}>
+			<aside
+				className={clsx(styles.container, { [styles.container_open]: isOpen })}
+				ref={rootRef}>
 				<form
-					className={styles.form}
+					className={clsx(styles.form)}
 					onSubmit={handleFormAction}
 					onReset={handleFormAction}>
-					<Text as='h1' size={31} weight={800} uppercase dynamicLite>
+					<Text as='h2' size={31} weight={800} uppercase dynamicLite>
 						Задайте параметры
 					</Text>
-					<div>
-						<Text as='h2' size={12} weight={800} uppercase dynamicLite>
-							Шрифт
-						</Text>
-						<Select
-							selected={settingForm.fontFamily}
-							options={fontFamilyOptions}
-							onChange={settingForm.setFontFamily}
-						/>
-					</div>
-					<RadioGroup
-						name={settingForm.fontSize.className}
-						options={fontSizeOptions}
-						selected={settingForm.fontSize}
-						title={'Размер шрифта'}
-						onChange={settingForm.setFontSize}
+					<Select
+						selected={fontFamily}
+						options={fontFamilyOptions}
+						onChange={setFontFamily}
+						title={'Шрифт'}
 					/>
-					<div>
-						<Text as='h2' size={12} weight={800} uppercase dynamicLite>
-							Цвет шрифта
-						</Text>
-						<Select
-							selected={settingForm.fontColor}
-							options={fontColors}
-							onChange={settingForm.setFontColor}
-						/>
-					</div>
+					<RadioGroup
+						name={fontSize.className}
+						options={fontSizeOptions}
+						selected={fontSize}
+						title={'Размер шрифта'}
+						onChange={setFontSize}
+					/>
+					<Select
+						selected={fontColor}
+						options={fontColors}
+						onChange={setFontColor}
+						title={'Цвет шрифта'}
+					/>
 					<Separator /> {/* Линия разделитель */}
-					<div>
-						<Text as='h2' size={12} weight={800} uppercase dynamicLite>
-							Цвет фона
-						</Text>
-						<Select
-							selected={settingForm.bgColor}
-							options={backgroundColors}
-							onChange={settingForm.setBgColor}
-						/>
-					</div>
-					<div>
-						<Text as='h2' size={12} weight={800} uppercase dynamicLite>
-							Ширина контента
-						</Text>
-						<Select
-							selected={settingForm.containerWidth}
-							options={contentWidthArr}
-							onChange={settingForm.setContainerWidth}
-						/>
-					</div>
-					<div className={styles.bottomContainer}>
+					<Select
+						selected={bgColor}
+						options={backgroundColors}
+						onChange={setBgColor}
+						title={'Цвет фона'}
+					/>
+					<Select
+						selected={containerWidth}
+						options={contentWidthArr}
+						onChange={setContainerWidth}
+						title={'Ширина контента'}
+					/>
+					<div className={clsx(styles.bottomContainer)}>
 						<Button title='Сбросить' htmlType='reset' type='clear' />
 						<Button title='Применить' htmlType='submit' type='apply' />
 					</div>
